@@ -16,19 +16,18 @@ def write_to_revit():
 
         blank_count = 0
         
-        with open('P:\\\\Structural\\2021\\2115 - Dallas\\2115.147 Toll Brothers Addison Road\\5 - Project Documents\B - Calculations\CI\Wood Calcs\Shear Walls\\toll_brothers_shear_wall_input1.txt') as f:
+        with open('P:\\\\Structural\\2021\\2115 - Dallas\\2115.147 Toll Brothers Addison Road\\5 - Project Documents\B - Calculations\CI\Wood Calcs\Shear Walls\\shear_wall_output.txt') as f:
             lines = f.readlines() 
 
         for line in lines:
             line = line.split()
-            print(line, len(swp))
 
-            if len(line) == 0:
+            if len(line) != 16 and len(line) != 15:
+                if len(line) != 0:
+                    print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': invalid length')
                 blank_count += 1
-                if blank_count > 3:
+                if blank_count > 15:
                     break
-                continue
-            if len(line) != 16:
                 continue
             else:
                 blank_count = 0
@@ -36,25 +35,29 @@ def write_to_revit():
             match_found = False
 
             # only assign shear wall if we have a valid design for it
-            if line['15'].isdigit():
-                for index in range(len(swp)):
-                    # please don't mess with level 2, that one is done
-                    if assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Z, 14.739583333):
-                        continue
-                    if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).X, float(line[7])):
-                        continue
-                    if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Y,float(line[8])):
-                        continue
-                    if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Z,float(line[9])):
-                        continue
-                    
+            if line[-1].isdigit():
+                # please don't mess with level 2, that one is done
+                if assert_almost_equal(float(line[9]), 14.739583333):
                     match_found = True
-                    swp[index].GetParameters('SW #')[0].Set(line[15])
-                    swp.pop(index)
-                    break
+                    print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': level 2')
+                else:
+                    for index in range(len(swp)):
+                        if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).X, float(line[7])):
+                            continue
+                        if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Y,float(line[8])):
+                            continue
+                        if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Z,float(line[9])):
+                            continue
+                        
+                        match_found = True
+                        swp[index].GetParameters('SW #')[0].Set(line[-1])
+                        swp.pop(index)
+                        break
+            else:
+                print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': invalid design')
         
             if not match_found:
-                print(f'Shear wall was not updated for {line[0]} at lvl {line[1]}')
+                print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': no match found')
         
         try:
             if DB.TransactionStatus.Committed == tran.Commit():
@@ -71,3 +74,5 @@ def assert_almost_equal(x1, x2):
         return True
     else:
         return False
+
+# write_to_revit()
