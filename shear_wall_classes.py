@@ -1,5 +1,3 @@
-from msilib.schema import Class
-from pickle import NONE
 from utils import ft_inches_to_decimal as ft2dec
 import math
 
@@ -53,13 +51,15 @@ class Project:
         if type == 'unit':
             return 27
         elif type == 'roof':
-            return 20
+            return 15
+        elif type == 'corridor':
+            return 28
         else:
             print(f'{type} is not a valid dead load type')
 
     
 class ShearWall():
-    def __init__(self, project_info, lvl, wind_trib, floor_trib, floor_load_type, wall_len, greater_wall_len=-1, tie_distance=1):
+    def __init__(self, project_info, lvl, wind_trib, floor_trib, floor_load_type, wall_len, greater_wall_len=0, tie_distance=1):
         # initialize certain variables as 0 so we know if the values have been set or not
         self.shear_point_load = 0
 
@@ -69,7 +69,7 @@ class ShearWall():
         self.floor_trib = floor_trib
         self.floor_load_type= floor_load_type
         self.wall_len = wall_len
-        if greater_wall_len == -1:
+        if greater_wall_len == 0:
             self.greater_wall_len = wall_len
         else:
             self.greater_wall_len = greater_wall_len
@@ -144,8 +144,8 @@ class StackedShearWall():
         self.project_info = project_info
 
         for index in range(self.num_lvls):
-            print(f'\n\nLEVEL {self.min_lvl + index}:')
-            print('---------------------------------------------')
+            # print(f'LEVEL {self.min_lvl + index}:')
+            # print('---------------------------------------------')
             self.get_shear_force_at_lvl(self.min_lvl + index)
             self.get_overturning_moment_at_lvl(self.min_lvl + index)
             self.get_resisting_moment_at_lvl(self.min_lvl + index)
@@ -157,7 +157,7 @@ class StackedShearWall():
         for index in range(lvl, self.max_lvl+1):
             shear_force += self.shear_walls[index-self.min_lvl].shear_force
         self.shear_force.append(shear_force)
-        print('Shear Force', self.shear_force[-1])
+        # print('Shear Force', self.shear_force[-1])
 
     def get_overturning_moment_at_lvl(self, lvl, elev_for_moment=-1):
         overturning_moment = 0
@@ -167,22 +167,22 @@ class StackedShearWall():
             overturning_moment += self.shear_walls[index-self.min_lvl].get_overturning_moment(elev)
 
         self.overturning_moment.append(overturning_moment)
-        print('Overturning Moment', self.overturning_moment[-1])
+        # print('Overturning Moment', self.overturning_moment[-1])
 
     def get_resisting_moment_at_lvl(self, lvl):
         resisting_moment = 0
         for index in range(lvl, self.max_lvl+1):
             resisting_moment += self.shear_walls[index-self.min_lvl].resisting_moment
         self.resisting_moment.append(resisting_moment)
-        print('Resisting Moment', self.resisting_moment[-1])
+        # print('Resisting Moment', self.resisting_moment[-1])
 
     def get_total_moment_at_lvl(self, lvl):
         self.total_moment[lvl - self.min_lvl] = self.overturning_moment[lvl - self.min_lvl] - self.resisting_moment[lvl - self.min_lvl]
-        print('Total Moment', self.total_moment[lvl - self.min_lvl])
+        # print('Total Moment', self.total_moment[lvl - self.min_lvl])
 
     def get_chord_forces_at_lvl(self, lvl):
         self.chord_forces[lvl - self.min_lvl] = self.total_moment[lvl - self.min_lvl] / (self.shear_walls[lvl - self.min_lvl].wall_len - self.shear_walls[lvl - self.min_lvl].tie_distance)
-        print('Chord Forces', self.chord_forces[lvl - self.min_lvl])
+        # print('Chord Forces', self.chord_forces[lvl - self.min_lvl])
 
 class ShearWallScheduleEntry():
     def __init__(self, **kwargs):
@@ -196,29 +196,40 @@ class ShearWallSchedule():
         self.shear_walls = []
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW1',
+            'name': '1',
             'material': 'GYP BOARD',
             'thickness': '5/8"',
             'fasteners': '6D COOLER (0.092" DIA x 1 7/8", 1/4" HEAD)',
             'max_fas_spacing': '7" OC',
-            'blocking': 'BLOCKED',
+            'blocking': 'UNBLOCKED',
+            'holddown_force': 0,
+            'wind_shear': 230
+        }))
+
+        self.shear_walls.append(ShearWallScheduleEntry(**{
+            'name': '2',
+            'material': 'GYP BOARD',
+            'thickness': '5/8"',
+            'fasteners': '6D COOLER (0.092" DIA x 1 7/8", 1/4" HEAD)',
+            'max_fas_spacing': '7" OC',
+            'blocking': 'UNBLOCKED',
+            'holddown_force': 5,
+            'wind_shear': 230
+        }))
+
+        self.shear_walls.append(ShearWallScheduleEntry(**{
+            'name': '3',
+            'material': 'GYP BOARD',
+            'thickness': '5/8"',
+            'fasteners': '6D COOLER (0.092" DIA x 1 7/8", 1/4" HEAD)',
+            'max_fas_spacing': '4" OC',
+            'blocking': 'UNBLOCKED',
             'holddown_force': 0,
             'wind_shear': 290
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW2',
-            'material': 'GYP BOARD',
-            'thickness': '5/8"',
-            'fasteners': '6D COOLER (0.092" DIA x 1 7/8", 1/4" HEAD)',
-            'max_fas_spacing': '7" OC',
-            'blocking': 'BLOCKED',
-            'holddown_force': 5,
-            'wind_shear': 290
-        }))
-
-        self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW3',
+            'name': '4',
             'material': 'GYP BOARD',
             'thickness': '5/8"',
             'fasteners': '6D COOLER (0.092" DIA x 1 7/8", 1/4" HEAD)',
@@ -229,7 +240,7 @@ class ShearWallSchedule():
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW4',
+            'name': '5',
             'material': 'GYP BOARD',
             'thickness': '5/8"',
             'fasteners': '6D COOLER (0.092" DIA x 1 7/8", 1/4" HEAD)',
@@ -240,105 +251,117 @@ class ShearWallSchedule():
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW5',
+            'name': '6',
             'material': 'APA RATED SHEATHING',
             'thickness': '7/16"',
             'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
             'max_fas_spacing': '6" OC',
             'blocking': None,
             'holddown_force': 0,
-            'wind_shear': 670
+            'wind_shear': 730
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW6',
+            'name': '7',
             'material': 'APA RATED SHEATHING',
             'thickness': '7/16"',
             'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
             'max_fas_spacing': '6" OC',
             'blocking': None,
             'holddown_force': 10,
-            'wind_shear': 670
+            'wind_shear': 730
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW7',
+            'name': '8',
             'material': 'APA RATED SHEATHING',
             'thickness': '7/16"',
             'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
             'max_fas_spacing': '4" OC',
             'blocking': None,
-            'holddown_force': 0,
-            'wind_shear': 980
+            'holddown_force': 5,
+            'wind_shear': 1065
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW8',
+            'name': '9',
             'material': 'APA RATED SHEATHING',
             'thickness': '7/16"',
             'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
             'max_fas_spacing': '4" OC',
             'blocking': None,
             'holddown_force': 15,
-            'wind_shear': 980
+            'wind_shear': 1065
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW9',
+            'name': '10',
             'material': 'APA RATED SHEATHING',
             'thickness': '7/16"',
             'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
             'max_fas_spacing': '3" OC',
             'blocking': None,
-            'holddown_force': 10,
-            'wind_shear': 1260
+            'holddown_force': 15,
+            'wind_shear': 1370
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW10',
+            'name': '11',
             'material': 'APA RATED SHEATHING',
             'thickness': '7/16"',
             'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
             'max_fas_spacing': '3" OC',
             'blocking': None,
-            'holddown_force': 20,
-            'wind_shear': 1260
+            'holddown_force': 25,
+            'wind_shear': 1370
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW11',
+            'name': '12',
             'material': 'APA RATED SHEATHING',
             'thickness': '7/16"',
             'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
             'max_fas_spacing': '2" OC',
             'blocking': None,
-            'holddown_force': 10,
-            'wind_shear': 1640
+            'holddown_force': 15,
+            'wind_shear': 1790
         }))
 
         self.shear_walls.append(ShearWallScheduleEntry(**{
-            'name': 'SW12',
+            'name': '13',
             'material': 'APA RATED SHEATHING',
             'thickness': '7/16"',
             'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
             'max_fas_spacing': '2" OC',
             'blocking': None,
-            'holddown_force': 20,
-            'wind_shear': 1640
+            'holddown_force': 25,
+            'wind_shear': 1790
+        }))
+
+        self.shear_walls.append(ShearWallScheduleEntry(**{
+            'name': '14',
+            'material': 'APA RATED SHEATHING - BOTH SIDES',
+            'thickness': '7/16"',
+            'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
+            'max_fas_spacing': '4" OC',
+            'blocking': None,
+            'holddown_force': 30,
+            'wind_shear': 2130
         }))
 
     # def add_shear_wall(self, )
 
-    def get_shear_wall(self, wind_shear, chord_force):
+    def get_shear_wall(self, wind_shear, chord_force, wall_location):
         for wall in self.shear_walls:
             if wall.wind_shear / 2 < wind_shear:
                 continue
             else:
                 if wall.holddown_force < chord_force:
-                    print(f'{wall.name} does not have a large enough holddown force')
+                    if wall.name in ['2', '5', '7', '9', '11', '13']:
+                        print(f'WARNING AT WALL {wall_location} - SW{wall.name} does not have a large enough holddown force')
                     continue
                 return wall
-        print(f'There is no wall that satisfies a shear value greater than {wind_shear} and a holddown force greater than {chord_force}')
+        print(f'ERROR AT WALL {wall_location} - There is no wall that satisfies a shear value greater than {wind_shear} and a holddown force greater than {chord_force}')
         return False
 
 
