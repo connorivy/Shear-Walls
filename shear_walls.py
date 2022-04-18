@@ -1,5 +1,6 @@
 from shear_wall_classes import *
 from openpyxl import load_workbook
+import argparse
 
 def main():
     project = Project()
@@ -11,9 +12,16 @@ def main():
     ws = workbook['input']
 
     prev_shear_wall_letter = ws['A2'].value
-    args = []
+    wall_args = []
     blank_count = 0
     current_row = 0
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--start', type=str, required=True)
+    parser.add_argument('--end', type=str, required=True)
+    args = parser.parse_args()
+
+    start_letters_no_nums = ''.join([i for i in args.start if not i.isdigit()])
 
     for row in ws.iter_rows(min_row=2, max_col=8, max_row=1500, values_only=True):
         current_row += 1
@@ -26,23 +34,33 @@ def main():
             continue
         else:
             blank_count = 0
+
+        current_letters_no_nums = ''.join([i for i in row[0] if not i.isdigit()])
+        if len(current_letters_no_nums) < len(start_letters_no_nums):
+            continue
+        elif row[0] < args.start:
+            print(row[0])
+            continue
+        elif row[0] > args.end:
+            print('BREAK', row[0])
+            break
             
         if row[0] != prev_shear_wall_letter:
-            write_values_to_excel(ws, project, args, current_row, prev_shear_wall_letter)
-            args = []
+            write_values_to_excel(ws, project, wall_args, current_row, prev_shear_wall_letter)
+            wall_args = []
             prev_shear_wall_letter = row[0]
 
         if row[6]:
-            args.append(*[row[1:7]])
+            wall_args.append(*[row[1:7]])
         else:
-            args.append(*[row[1:6]])
+            wall_args.append(*[row[1:6]])
 
-    write_values_to_excel(ws, project, args, current_row, prev_shear_wall_letter)
+    write_values_to_excel(ws, project, wall_args, current_row, prev_shear_wall_letter)
     workbook.save(path + "shear_wall_output.xlsx")
 
-def write_values_to_excel(ws, project, args, row, wall_location):
-    num_rows = len(args)
-    stacked_shear_wall = StackedShearWall(project, *args)
+def write_values_to_excel(ws, project, wall_args, row, wall_location):
+    num_rows = len(wall_args)
+    stacked_shear_wall = StackedShearWall(project, *wall_args)
 
     for i in range(num_rows):
         schedule_entry = project.shear_wall_schedule.get_shear_wall(stacked_shear_wall.shear_force[i], max(0,stacked_shear_wall.chord_forces[i] / 1000), wall_location)

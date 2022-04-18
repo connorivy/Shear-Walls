@@ -36,23 +36,23 @@ def write_to_revit():
 
             # only assign shear wall if we have a valid design for it
             if line[-1].isdigit():
-                # please don't mess with level 2, that one is done
-                if assert_almost_equal(float(line[9]), 14.739583333):
+                # # please don't mess with level 2, that one is done
+                # if assert_almost_equal(float(line[9]), 14.739583333):
+                #     match_found = True
+                #     print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': level 2')
+                # else:
+                for index in range(len(swp)):
+                    if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).X, float(line[7])):
+                        continue
+                    if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Y,float(line[8])):
+                        continue
+                    if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Z,float(line[9])):
+                        continue
+                    
                     match_found = True
-                    print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': level 2')
-                else:
-                    for index in range(len(swp)):
-                        if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).X, float(line[7])):
-                            continue
-                        if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Y,float(line[8])):
-                            continue
-                        if not assert_almost_equal(swp[index].Location.Curve.GetEndPoint(0).Z,float(line[9])):
-                            continue
-                        
-                        match_found = True
-                        swp[index].GetParameters('SW #')[0].Set(line[-1])
-                        swp.pop(index)
-                        break
+                    swp[index].GetParameters('SW #')[0].Set(line[-1])
+                    swp.pop(index)
+                    break
             else:
                 print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': invalid design')
         
@@ -70,9 +70,10 @@ def write_to_revit():
             tran.RollBack()
 
 def assert_almost_equal(x1, x2):
-    if abs(x1-x2) < .00000001:
+    if abs(x1-x2) < .0001:
         return True
     else:
         return False
 
-# write_to_revit()
+if __name__ == "__main__":
+    write_to_revit()
