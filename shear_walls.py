@@ -22,11 +22,15 @@ def main():
     args = parser.parse_args()
 
     start_letters_no_nums = ''.join([i for i in args.start if not i.isdigit()])
+    rows_to_delete = []
+    delete_spaces = True
 
     for row in ws.iter_rows(min_row=2, max_col=8, max_row=1500, values_only=True):
         current_row += 1
         # quit the for loop once three consecutive blanks have been found
         if row[0] == None:
+            if delete_spaces:
+                rows_to_delete.append(current_row+1)
             blank_count += 1
             if blank_count > 3:
                 current_row -= 2
@@ -37,13 +41,17 @@ def main():
 
         current_letters_no_nums = ''.join([i for i in row[0] if not i.isdigit()])
         if len(current_letters_no_nums) < len(start_letters_no_nums):
+            rows_to_delete.append(current_row+1)
             continue
         elif row[0] < args.start:
-            print(row[0])
+            rows_to_delete.append(current_row+1)
             continue
         elif row[0] > args.end:
-            print('BREAK', row[0])
-            break
+            rows_to_delete.append(current_row+1)
+            delete_spaces = True
+            continue
+        else:
+            delete_spaces = False
             
         if row[0] != prev_shear_wall_letter:
             write_values_to_excel(ws, project, wall_args, current_row, prev_shear_wall_letter)
@@ -56,6 +64,8 @@ def main():
             wall_args.append(*[row[1:6]])
 
     write_values_to_excel(ws, project, wall_args, current_row, prev_shear_wall_letter)
+    for row in reversed(rows_to_delete):
+        ws.delete_rows(row)
     workbook.save(path + "shear_wall_output.xlsx")
 
 def write_values_to_excel(ws, project, wall_args, row, wall_location):

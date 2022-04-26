@@ -16,6 +16,8 @@ class Project:
 
         self.shear_per_lvl_plf = [131, 236, 215, 227, 156, 611]
 
+        self.amenities_shear_plf = 236 + 215 + 227 + 156 + 611
+
         self.typ_floor_assemb_ft = ft2dec(1, 9+3/4)
 
         self.shear_wall_schedule = ShearWallSchedule()
@@ -122,19 +124,44 @@ class ShearWall():
     def get_chord_forces(self):
         self.chord_forces = self.total_moment / (self.wall_len - self.tie_distance)
 
+class AmenitySW(ShearWall):
+    def __init__(self, project_info, lvl, wind_trib, floor_trib, floor_load_type, wall_len, greater_wall_len=0, tie_distance=1):
+        super().__init__(project_info, lvl, wind_trib, floor_trib, floor_load_type, wall_len, greater_wall_len, tie_distance)
+
+        self.get_shear_point_load()
+        self.get_shear_force()
+        self.get_overturning_moment()
+        self.resisting_moment = 0
+        self.get_chord_forces()
+
+    def get_shear_point_load(self):
+        # wind shear at level * wind trib * wall_len / greater_wall_len
+        self.shear_point_load = self.project_info.wind_reduction_factor * self.project_info.amenities_shear_plf * self.wind_trib * self.wall_len / self.greater_wall_len
+
+    def get_chord_forces(self):
+        self.chord_forces = self.total_moment / (self.wall_len - self.tie_distance)
+
 
 class StackedShearWall():
     # stacked shear walls is expecting input that looks like this (project_info, [these are the args for a wall except project info], [these are a differnt wall args])
     def __init__(self, project_info, *args):
         min_lvl = 1000
         self.shear_walls = []
-        
-        for wall_args in args:
-            self.shear_walls.append(ShearWall(project_info, *wall_args))
-            min_lvl = min(min_lvl, self.shear_walls[-1].lvl)
-        self.min_lvl = math.floor(min_lvl)
-        self.num_lvls = len(self.shear_walls)
-        self.max_lvl = math.floor(min_lvl) + self.num_lvls - 1 
+
+        # if the input is only one line, then treat as an amenity shear wall
+        if len(args) == 1:
+            self.shear_walls.append(AmenitySW(project_info, *args[0]))
+            print('Amenity SW', self.shear_walls[-1].lvl, self.shear_walls[-1].wind_trib, self.shear_walls[-1].wall_len)
+            self.min_lvl = 1
+            self.num_lvls = 1
+            self.max_lvl = 1
+        else:
+            for wall_args in args:
+                self.shear_walls.append(ShearWall(project_info, *wall_args))
+                min_lvl = min(min_lvl, self.shear_walls[-1].lvl)
+            self.min_lvl = math.floor(min_lvl)
+            self.num_lvls = len(self.shear_walls)
+            self.max_lvl = math.floor(min_lvl) + self.num_lvls - 1 
 
         self.shear_force = []
         self.overturning_moment = []
@@ -349,7 +376,16 @@ class ShearWallSchedule():
             'wind_shear': 2130
         }))
 
-    # def add_shear_wall(self, )
+        self.shear_walls.append(ShearWallScheduleEntry(**{
+            'name': '15',
+            'material': 'APA RATED SHEATHING - BOTH SIDES',
+            'thickness': '7/16"',
+            'fasteners': '8D COMMON (2 1/2" x 0.131" DIA)',
+            'max_fas_spacing': '3" OC',
+            'blocking': None,
+            'holddown_force': 30,
+            'wind_shear': 2740
+        }))
 
     def get_shear_wall(self, wind_shear, chord_force, wall_location):
         for wall in self.shear_walls:
