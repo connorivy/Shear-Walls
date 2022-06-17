@@ -23,8 +23,10 @@ def write_to_revit():
             line = line.split()
 
             if len(line) != 16 and len(line) != 15:
-                if len(line) != 0:
-                    print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': invalid length')
+                if len(line) != 0 and len(line) < 15:
+                    print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': not enough arguments')
+                elif len(line) > 16:
+                    print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': too many arguments')
                 blank_count += 1
                 if blank_count > 15:
                     break
@@ -57,7 +59,7 @@ def write_to_revit():
                 print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': invalid design')
         
             if not match_found:
-                print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': no match found')
+                print('Shear wall was not updated for ' + line[0] + ' at lvl ' + line[1] + ': given coordinates either missing or duplicate')
         
         try:
             if DB.TransactionStatus.Committed == tran.Commit():

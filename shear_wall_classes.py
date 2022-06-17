@@ -389,7 +389,7 @@ class ShearWallSchedule():
 
     def get_shear_wall(self, wind_shear, chord_force, wall_location):
         for wall in self.shear_walls:
-            if wall.wind_shear / 2 < wind_shear:
+            if wall.wind_shear / 2 < wind_shear: #divide by 2 per NDS provisions (TODO find specific reference)
                 continue
             else:
                 if wall.holddown_force < chord_force:

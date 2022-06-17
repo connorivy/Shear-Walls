@@ -22,6 +22,7 @@ def main():
     args = parser.parse_args()
 
     start_letters_no_nums = ''.join([i for i in args.start if not i.isdigit()])
+    end_letters_no_nums = ''.join([i for i in args.end if not i.isdigit()])
     rows_to_delete = []
     delete_spaces = True
 
@@ -41,6 +42,9 @@ def main():
 
         current_letters_no_nums = ''.join([i for i in row[0] if not i.isdigit()])
         if len(current_letters_no_nums) < len(start_letters_no_nums):
+            rows_to_delete.append(current_row+1)
+            continue
+        elif len(current_letters_no_nums) > len(end_letters_no_nums):
             rows_to_delete.append(current_row+1)
             continue
         elif row[0] < args.start:
@@ -67,6 +71,19 @@ def main():
     for row in reversed(rows_to_delete):
         ws.delete_rows(row)
     workbook.save(path + "shear_wall_output.xlsx")
+
+    # write excel contents to txt file for revit python shell
+    txt_file = open(path + "shear_wall_output.txt","w")
+    # txt_file = ""
+    for row in ws.iter_rows(min_row=2, max_col=20, max_row=1500, values_only=True):
+        for cell_value in row:
+            if cell_value == None:
+                continue
+            txt_file.write(str(cell_value)+" ")
+        txt_file.write("\n")
+    txt_file.close()
+    workbook.close()
+    # workbook.save(path + "shear_wall_output.txt")
 
 def write_values_to_excel(ws, project, wall_args, row, wall_location):
     num_rows = len(wall_args)
