@@ -37,7 +37,7 @@ Run `python shear_walls.py --start "start_letter" --end "end_letter"` where star
 
 #### Step 4 - Update Shear Wall Detail Components in Revit:
 Assuming that the detail component has not moved, you can change thousand of shear wall labels to match your calcs in a matter of seconds. 
-This is a bit hacky but it works. First, save the output file as a .txt file, then update the location of the shear_wall_output.txt file in the "utils.py" file. Lastly, copy the entire "utils.py" file into the Revit Python Shell. Run it ask your company for a 10% cut of the amount of money you just saved them. See below to illustrate this last step. (2 gifs because of the length of the video)
+This is a bit hacky but it works. First, save the output file as a .txt file (UPDATE: THE TXT FILE IS GENERATED FOR YOU NOW), then update the location of the shear_wall_output.txt file in the "utils.py" file. Lastly, copy the entire "utils.py" file into the Revit Python Shell. Run it ask your company for a 10% cut of the amount of money you just saved them. See below to illustrate this last step. (2 gifs because of the length of the video)
 
 ![revit_output_1](https://user-images.githubusercontent.com/43247197/165410864-de94f7b0-d867-4fa7-9f76-f1765e076323.gif)
 
